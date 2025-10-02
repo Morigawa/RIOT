@@ -1,7 +1,7 @@
 PKG_NAME=openthread
 PKG_URL=https://github.com/openthread/openthread.git
-# thread-reference-20200818
-PKG_VERSION=54b31928cf65803a9cd83c9f97061b64e465aaf7
+# thread-reference-20250612
+PKG_VERSION=8a19434b8ae56ed5ffbc931d3f1aa212823633c6
 PKG_LICENSE=BSD-3-Clause
 
 include $(RIOTBASE)/pkg/pkg.mk
@@ -78,9 +78,10 @@ $(PKG_BUILD_DIR)/Makefile:
 	 -DCMAKE_NM="$(NM)" \
 	 -DCMAKE_STRIP="$(STRIP)" \
 	 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-	 -DOT_PLATFORM=NO \
-	 -DOT_CONFIG="$(RIOTBASE)/pkg/openthread/include/platform_config.h" \
+	 -DOT_PLATFORM=external \
+	 -DOT_PLATFORM_CONFIG="$(RIOTBASE)/pkg/openthread/include/platform_config.h" \
 	 -DOT_APP_CLI=$(OT_APP_CLI) \
 	 -DOT_CLI_TRANSPORT=CONSOLE \
 	 -DOT_JOINER=$(OT_JOINER) \
-	 -DOT_COAP=$(OT_COAP)
+	 -DOT_COAP=$(OT_COAP) \
+   -DOT_TCP=OFF
