@@ -24,7 +24,6 @@
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
 #include "openthread/platform/alarm-milli.h"
-#include "openthread/platform/uart.h"
 #include "openthread/thread.h"
 #include "random.h"
 #include "ot.h"
@@ -107,8 +106,7 @@ static void *_openthread_event_loop(void *arg)
     /* Start Thread protocol operation */
     otThreadSetEnabled(sInstance, true);
 #else
-    /* enable OpenThread UART */
-    otPlatUartEnable();
+
 #endif
 
 #if OPENTHREAD_ENABLE_DIAG
