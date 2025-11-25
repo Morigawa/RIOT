@@ -70,6 +70,10 @@ USEMODULE += $(DRIVER)
 USEMODULE += random
 USEMODULE += ps
 
+# Stacksize should be increased in case 'ot debug' is used from the shell
+# else a core panic is triggered
+# CFLAGS += -DTHREAD_STACKSIZE_MAIN=2024
+
 #required for C++ compiling
 CXXEXFLAGS += -fno-rtti
 USEMODULE += cpp11-compat
