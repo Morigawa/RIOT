@@ -8,22 +8,18 @@ include $(RIOTBASE)/pkg/pkg.mk
 
 ifneq (,$(filter openthread-ftd,$(USEMODULE)))
   TD = ftd
-  OT_JOINER := OFF
 else ifneq (,$(filter openthread-mtd,$(USEMODULE)))
   TD = mtd
-  OT_JOINER := ON
 else
   $(error "Please use either USEMODULE=openthread-ftd or USEMODULE=openthread-mtd")
 endif
 
 OT_MODULES = mbedcrypto mbedtls openthread-$(TD)
+
 ifneq (,$(filter openthread-cli-$(TD),$(USEMODULE)))
   OT_MODULES += openthread-cli-$(TD)
   OT_APP_CLI ?= ON
 endif
-
-# Enable CoAP
-OT_COAP ?= ON
 
 OT_C_FLAGS = $(CFLAGS_CPU)
 OT_C_FLAGS += -fdata-sections
@@ -84,4 +80,8 @@ $(PKG_BUILD_DIR)/Makefile:
 	 -DOT_CLI_TRANSPORT=CONSOLE \
 	 -DOT_JOINER=$(OT_JOINER) \
 	 -DOT_COAP=$(OT_COAP) \
-   -DOT_TCP=OFF
+	 -DOT_RCP=OFF \
+	 -DOT_APP_RCP=OFF \
+	 -DOT_APP_NCP=OFF \
+	 -DOT_FTD=ON \
+	 -DOT_MTD=OFF \

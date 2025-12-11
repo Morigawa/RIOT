@@ -17,14 +17,18 @@
  * @}
  */
 
+#define OT_NETWORK_KEY_SIZE 16
+
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include "msg.h"
-#include "openthread/cli.h"
+#include "openthread/dataset_ftd.h" // TODO only if ftd
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
 #include "openthread/platform/alarm-milli.h"
 #include "openthread/thread.h"
+#include "openthread/dataset_ftd.h" // TODO only if ftd
 #include "random.h"
 #include "ot.h"
 #include "event.h"
@@ -35,6 +39,29 @@
 static otInstance *sInstance;   /**< global OpenThread instance */
 static netdev_t *_dev;          /**< netdev descriptor for OpenThread */
 static event_queue_t ev_queue;  /**< the event queue for OpenThread */
+
+static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
+{
+	size_t i;
+	size_t src_len = strlen(src);
+	char *endptr;
+
+	for (i = 0U; i < src_len; i++) {
+		if (!isxdigit((unsigned char)src[i]) &&
+		    src[i] != ':') {
+			return -EINVAL;
+		}
+	}
+
+	(void)memset(buf, 0, buf_len);
+
+	for (i = 0U; i < (size_t)buf_len; i++) {
+		buf[i] = (uint8_t)strtol(src, &endptr, 16);
+		src = ++endptr;
+	}
+
+	return 0;
+}
 
 static void _ev_isr_handler(event_t *event)
 {
@@ -96,18 +123,34 @@ static void *_openthread_event_loop(void *arg)
 
 #if defined(MODULE_OPENTHREAD_CLI_FTD) || defined(MODULE_OPENTHREAD_CLI_MTD)
     ot_shell_init(sInstance);
+#endif
+    otError error;
+    otOperationalDataset dataset;
+
     /* Init default parameters */
     otPanId panid = OPENTHREAD_PANID;
     uint8_t channel = OPENTHREAD_CHANNEL;
-    otLinkSetPanId(sInstance, panid);
-    otLinkSetChannel(sInstance, channel);
-    /* Bring up the IPv6 interface  */
-    otIp6SetEnabled(sInstance, true);
-    /* Start Thread protocol operation */
-    otThreadSetEnabled(sInstance, true);
-#else
+    char *networkkey = OPENTHREAD_NETWORK_KEY;
 
-#endif
+    /* Bring up the IPv6 interface  */
+    error = otIp6SetEnabled(sInstance, true);
+
+    /* Generate new operational dataset, should be done for only one board?, ftd only?*/
+    error = otDatasetCreateNewNetwork(sInstance, &dataset);
+
+    /* Set custom values for operational dataset*/
+    dataset.mChannel = channel;
+    dataset.mPanId = panid;
+    bytes_from_str(dataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE, networkkey);
+
+    /* Set active operational dataset*/
+    error = otDatasetSetActive(sInstance, &dataset);
+
+    /* Start Thread protocol operation */
+    error = otThreadSetEnabled(sInstance, true);
+    if (error!=OT_ERROR_NONE) {
+        printf("pkg/openthread: Error in initialization\n");
+    }
 
 #if OPENTHREAD_ENABLE_DIAG
     diagInit(sInstance);
