@@ -25,6 +25,9 @@
 
 #include "openthread/platform/logging.h"
 
+#define ENABLE_DEBUG 0
+#include "debug.h"
+
 /* adapted from OpenThread posix example:
  * See: https://github.com/openthread/openthread/blob/master/examples/platforms/posix/logging.c */
 __attribute__((__format__ (__printf__, 3, 4)))
@@ -34,7 +37,16 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat
     (void) aLogRegion;
     va_list args;
     va_start(args, aFormat);
-    vfprintf(stderr, aFormat, args);
-    fprintf(stderr, "\n");
+    /*stderr is not redirected to make term*/
+    vprintf(aFormat,args);
+    printf("\n");
     va_end(args);
+}
+
+// optional
+void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
+{
+    // TODO write me 
+    DEBUG("openthread: otPlatLogHandleLevelChanged is not implemented");
+    (void) aLogLevel;
 }
