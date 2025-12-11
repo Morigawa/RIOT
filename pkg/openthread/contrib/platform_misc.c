@@ -50,14 +50,57 @@ void otPlatReset(otInstance *aInstance)
     pm_reboot();
 }
 
+otError otPlatResetToBootloader(otInstance *aInstance)
+{
+    // TODO write me 
+    DEBUG("openthread: otPlatResetToBootloader is not implemented");
+    (void) aInstance;
+    return OT_ERROR_NOT_CAPABLE;
+}
+
 otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 {
+    // TODO write me 
+    DEBUG("openthread: otPlatGetResetReason is not implemented");
     (void)aInstance;
-    /* TODO: Write me! */
-    return OT_PLAT_RESET_REASON_POWER_ON;
+    return OT_PLAT_RESET_REASON_UNKNOWN;
+}
+
+void otPlatAssertFail(const char *aFilename, int aLineNumber)
+{
+    // TODO write me 
+    DEBUG("openthread: otPlatAssertFail is not implemented");
+    (void) aFilename;
+    (void) aLineNumber;
 }
 
 void otPlatWakeHost(void)
 {
-    /* TODO: implement an operation to wake the host from sleep state. */
+    // TODO write me 
+    DEBUG("openthread: otPlatWakeHost is not implemented");
+}
+
+otError otPlatSetMcuPowerState(otInstance *aInstance, otPlatMcuPowerState aState)
+{
+    // TODO write me 
+    DEBUG("openthread: otPlatSetMcuPowerState is not implemented");
+    (void) aInstance;
+    (void) aState;
+    return OT_ERROR_FAILED;
+}
+
+otPlatMcuPowerState otPlatGetMcuPowerState(otInstance *aInstance)
+{
+    // TODO write me 
+    DEBUG("openthread: otPlatGetMcuPowerState is not implemented");
+    (void) aInstance;
+    return OT_PLAT_MCU_POWER_STATE_OFF;
+}
+
+// optional
+otError otPlatLogCrashDump(void)
+{
+    // TODO write me 
+    DEBUG("openthread: otPlatLogCrashDump is not implemented");
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
