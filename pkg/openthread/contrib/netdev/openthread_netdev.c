@@ -131,6 +131,8 @@ static void *_openthread_event_loop(void *arg)
     otPanId panid = OPENTHREAD_PANID;
     uint8_t channel = OPENTHREAD_CHANNEL;
     char *networkkey = OPENTHREAD_NETWORK_KEY;
+    char *meshprefix = "fd:05:77:bd:d2:c1:da:be";
+    char *networkname = "OT-nrf1";
 
     /* Bring up the IPv6 interface  */
     error = otIp6SetEnabled(sInstance, true);
@@ -141,7 +143,10 @@ static void *_openthread_event_loop(void *arg)
     /* Set custom values for operational dataset*/
     dataset.mChannel = channel;
     dataset.mPanId = panid;
+    otNetworkNameFromString(&dataset.mNetworkName,networkname);
+
     bytes_from_str(dataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE, networkkey);
+    bytes_from_str(dataset.mMeshLocalPrefix.m8, OT_MESH_LOCAL_PREFIX_SIZE, meshprefix);
 
     /* Set active operational dataset*/
     error = otDatasetSetActive(sInstance, &dataset);
