@@ -56,13 +56,15 @@
 extern "C" {
 #endif
 
+#include "event.h"
 #include "net/netopt.h"
 #include "net/ieee802154.h"
 #include "net/ethernet.h"
 #include "net/netdev.h"
+#include "ot-util.h"
 #include "thread.h"
+
 #include "openthread/instance.h"
-#include "event.h"
 
 /**
  * @name    Openthread constants

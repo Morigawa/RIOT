@@ -3,12 +3,18 @@ USEMODULE += l2util
 USEMODULE += netdev
 USEMODULE += openthread_contrib
 USEMODULE += openthread_contrib_netdev
+USEMODULE += ztimer
+USEMODULE += ztimer_msec
 
 ifneq (,$(filter openthread-cli-%,$(USEMODULE)))
   USEMODULE += shell_cmds_default
 endif
 
-USEMODULE += ztimer
-USEMODULE += ztimer_msec
+ifneq (,$(filter openthread_sock_udp,$(USEMODULE)))
+  USEMODULE += core_mbox
+  USEMODULE += iolist
+  USEMODULE += ipv6
+  USEMODULE += sock
+endif
 
 FEATURES_REQUIRED += cpp

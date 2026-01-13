@@ -9,6 +9,11 @@ ifneq (,$(filter openthread_contrib,$(USEMODULE)))
   DIRS += $(OPENTHREAD_DIR)/contrib/netdev
 endif
 
+ifneq (,$(filter openthread_sock_udp,$(USEMODULE)))
+  DIRS += $(OPENTHREAD_DIR)/contrib/sock
+  INCLUDES += -I$(OPENTHREAD_DIR)/contrib/sock/include
+endif
+
 ifneq (,$(filter cortex-m0% cortex-m3%,$(CPU_CORE)))
   # There are problem with unused `-mcpu...` arguments in clang and with
   # ranlib + LLVM/clang in this package with Cortex-M0 and M3

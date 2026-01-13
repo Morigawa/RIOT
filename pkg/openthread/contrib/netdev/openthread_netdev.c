@@ -21,7 +21,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <string.h>
 #include "msg.h"
 #include "openthread/dataset_ftd.h" // TODO only if ftd
 #include "openthread/instance.h"
@@ -39,29 +38,6 @@
 static otInstance *sInstance;   /**< global OpenThread instance */
 static netdev_t *_dev;          /**< netdev descriptor for OpenThread */
 static event_queue_t ev_queue;  /**< the event queue for OpenThread */
-
-static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
-{
-	size_t i;
-	size_t src_len = strlen(src);
-	char *endptr;
-
-	for (i = 0U; i < src_len; i++) {
-		if (!isxdigit((unsigned char)src[i]) &&
-		    src[i] != ':') {
-			return -EINVAL;
-		}
-	}
-
-	(void)memset(buf, 0, buf_len);
-
-	for (i = 0U; i < (size_t)buf_len; i++) {
-		buf[i] = (uint8_t)strtol(src, &endptr, 16);
-		src = ++endptr;
-	}
-
-	return 0;
-}
 
 static void _ev_isr_handler(event_t *event)
 {
