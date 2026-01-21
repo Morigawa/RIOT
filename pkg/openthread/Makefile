@@ -30,6 +30,8 @@ OT_C_FLAGS += -Wno-implicit-fallthrough
 OT_C_FLAGS += -Wno-unused-parameter
 OT_CXXFLAGS += -Wno-class-memaccess
 OT_CXXFLAGS += -DOPENTHREAD_TARGET_RIOT
+# TODO remove later
+OT_CXXFLAGS += -g
 
 OT_MODULES_ARCHIVES = $(addsuffix .a,$(addprefix $(BINDIR)/,$(OT_MODULES)))
 OT_CORE_LIB_DIR = $(PKG_BUILD_DIR)/src/core

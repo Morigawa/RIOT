@@ -18,10 +18,14 @@
 
 #include "iolist.h"
 #include "net/sock/udp.h"
+#include "memarray.h"
 
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
 #include "openthread/udp.h"
+
+#define MESSAGE_PTR 0
+#define MESSAGE_INFO_PTR 1
 
 #if IS_USED(MODULE_ZTIMER_USEC) || IS_USED(MODULE_ZTIMER_MSEC)
 #  include "ztimer.h"
@@ -51,9 +55,13 @@ typedef struct {
 } read_message_event_t;
 
 typedef struct {
-    otMessage* message;
-    otMessageInfo* message_info;
-} ot_message_ptrs_t;
+    otMessage* msg;
+    otMessageInfo msg_info;
+} ot_message_t;
+
+// Keeps OpenThread Messages in buffer, after they are destroyed by OpenThread
+memarray_t ot_messages_memarray;
+ot_message_t ot_messages_buf[OT_SOCK_MBOX_SIZE];
 
 // static int _str_from_ipv6_array(const uint8_t* array, char* address)
 // {
@@ -90,12 +98,20 @@ static void _send_udp_message_handler(event_t *event)
     size_t payload_bytes = iolist_size(send_event->snips);
     char msg_buffer[payload_bytes];
     iolist_to_buffer(send_event->snips, &msg_buffer, payload_bytes);
-
+ 
     otError error = otMessageAppend(message, &msg_buffer, payload_bytes);
     printf("Length of message after append: %d Length of message before append %d\n", otMessageGetLength(message),payload_bytes);
-    printf("Error: %s\n", otThreadErrorToString(error));    
-
-    otUdpSend(instance, &send_event->sock->ot_udp_sock, message, &message_info);
+    printf("Error: %s\n", otThreadErrorToString(error));  
+    //maybe skip?
+    if (error != OT_ERROR_NONE) {
+        otMessageFree(message);
+        return;
+    }
+ 
+    error = otUdpSend(instance, &send_event->sock->ot_udp_sock, message, &message_info);
+    if (error != OT_ERROR_NONE) {
+        otMessageFree(message);
+    }
 }
 
 static void _read_message_handler(event_t *event)
@@ -111,30 +127,33 @@ static void _read_message_handler(event_t *event)
 
 static void _handle_udp_receive(void *context, otMessage* message, const otMessageInfo* message_info)
 {
-    // buffer size for messages
-    // uint8_t buf[32];
-
-    // ignore neccessary variables for typedev of otUdpOpen->aCallback funtion
     (void) message_info;
     sock_udp_t* sock = context;
 
+    // Allocate buffer for message pointer and otMessageInfo in RIOT buffer Pool
+    ot_message_t* msg_buf = memarray_alloc(&ot_messages_memarray);
+    if(msg_buf == NULL) return; // Log error no buf
+
+    otInstance* instance = openthread_get_instance();
+
+    uint16_t len = otMessageGetLength(message);
+    char* tmp_buf[len];
+    otMessageRead(message, 0, tmp_buf, len);
+
+    // Allocate message buffer in OpenThread managed buffer pool
+    otMessage* msg_cpy = otUdpNewMessage(instance, NULL);
+    if(msg_cpy == NULL) return; //Log error no buf
+    otMessageAppend(msg_cpy, tmp_buf, len);
+
+    msg_buf->msg = msg_cpy;
+    msg_buf->msg_info = *message_info;
+
     msg_t msg = {
-        .content = { 
-            .ptr = message,
+        .content = {
+            .ptr = msg_buf,
         }
     };
-
     mbox_try_put(&sock->mbox, &msg);
-    //otMessageFree(message);
-
-    // print out received message
-    // TODO print source address/port?
-    // printf("Received message: \"");
-    // int res = otMessageRead(message, otMessageGetOffset(message), buf, sizeof(buf) - 1);
-    // for (int i = 0; i < res; i++) {
-    //     printf("%c", buf[i]);
-    // }
-    // printf("\"\n");
 }
 
 static void _create_udp_socket_handler(event_t *event)
@@ -218,12 +237,16 @@ int sock_udp_create(sock_udp_t *sock, const sock_udp_ep_t *local,
         return -EINVAL;
     }
 
+    memarray_init(&ot_messages_memarray, &ot_messages_buf, sizeof(ot_message_t), OT_SOCK_MBOX_SIZE);
+
     // check and translate address and port of local endpoint
     if (local == NULL || local->port == 0) return -EINVAL;
 
     memset(sock, 0, sizeof(*sock));
 
     mbox_init(&sock->mbox, sock->mbox_queue, OT_SOCK_MBOX_SIZE);
+    otMessageQueue msgq;
+    otMessageQueueInit(&msgq);
 
     socket_event_t event_create_udp_socket = {
         .super.handler = _create_udp_socket_handler,
@@ -321,10 +344,12 @@ ssize_t sock_udp_recv_aux(sock_udp_t *sock, void *data, size_t max_len,
         }
     }
 
+    ot_message_t* ot_message = msg.content.ptr;
+
     uint16_t packet_len = 0;
     read_message_event_t read_message_event = {
         .super.handler = _read_message_handler,
-        .message_ptr = msg.content.ptr,
+        .message_ptr = ot_message->msg,
         .data = data,
         .max_len = max_len,
         .packet_len = &packet_len,
@@ -334,9 +359,13 @@ ssize_t sock_udp_recv_aux(sock_udp_t *sock, void *data, size_t max_len,
     event_post(ot_evq, &read_message_event.super);
     event_sync(ot_evq);
 
-    uint8_t addr[16] = {0xff, 0x02, 0x0 ,0x0 ,0x0, 0x0, 0x0 ,0x0 ,0x0, 0x0,0x0 ,0x0 ,0x0, 0x0, 0x0, 0x02};
-    memcpy(&remote->addr.ipv6, addr, 16*sizeof(uint8_t));
-    remote->port = 4404;
+    // uint8_t addr[16] = {0xff, 0x02, 0x0 ,0x0 ,0x0, 0x0, 0x0 ,0x0 ,0x0, 0x0,0x0 ,0x0 ,0x0, 0x0, 0x0, 0x02};
+    // memcpy(&remote->addr.ipv6, addr, 16*sizeof(uint8_t));
+    // remote->port = 4404;
+    memcpy(&remote->addr.ipv6, ot_message->msg_info.mPeerAddr.mFields.m8, 16*sizeof(uint8_t));
+    remote->port = ot_message->msg_info.mPeerPort;
+    otMessageFree();
+    memarray_free(&ot_messages_memarray,ot_message);
 
     return packet_len;
 }

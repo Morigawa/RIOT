@@ -14,6 +14,7 @@ ifneq (,$(filter openthread_sock_udp,$(USEMODULE)))
   USEMODULE += core_mbox
   USEMODULE += iolist
   USEMODULE += ipv6
+  USEMODULE += memarray
   USEMODULE += sock
 endif
 

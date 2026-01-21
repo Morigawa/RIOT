@@ -13,7 +13,7 @@
  *          the queue.
  */
 #ifndef CONFIG_OT_SOCK_MBOX_SIZE_EXP
-#define CONFIG_OT_SOCK_MBOX_SIZE_EXP      (3)
+#define CONFIG_OT_SOCK_MBOX_SIZE_EXP      (4)
 #endif
 /** @} */
 

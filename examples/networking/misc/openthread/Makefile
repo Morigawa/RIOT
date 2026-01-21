@@ -29,6 +29,7 @@ RIOTBASE ?= $(CURDIR)/../../../..
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
+DEVELHELP=1
 
 USEPKG += openthread
 
@@ -74,7 +75,7 @@ USEMODULE += ps
 
 # Stacksize should be increased in case 'ot debug' is used from the shell
 # else a core panic is triggered
-# CFLAGS += -DTHREAD_STACKSIZE_MAIN=2024
+CFLAGS += -DTHREAD_STACKSIZE_MAIN=2024
 
 #required for C++ compiling
 CXXEXFLAGS += -fno-rtti
