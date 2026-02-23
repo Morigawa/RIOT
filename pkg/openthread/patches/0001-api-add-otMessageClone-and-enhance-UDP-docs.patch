@@ -1,0 +1,102 @@
+From ea07909b2ff1d50f731c59a07f0e5096349daaa5 Mon Sep 17 00:00:00 2001
+From: Abtin Keshavarzian <abtink@google.com>
+Date: Thu, 22 Jan 2026 17:31:18 -0800
+Subject: [PATCH] [api] add `otMessageClone` and enhance UDP docs
+
+This commit introduces a new `otMessageClone()` API to create a
+full clone/copy of a message.
+
+Additionally, the documentation for the `otUdpReceive` and
+`otUdpHandler` callbacks is polished to improve clarity on message
+ownership and lifetime.
+---
+ include/openthread/message.h | 15 +++++++++++++++
+ include/openthread/udp.h     | 24 ++++++++++++++++++++----
+ src/core/api/message_api.cpp |  2 ++
+ 3 files changed, 37 insertions(+), 4 deletions(-)
+
+diff --git a/include/openthread/message.h b/include/openthread/message.h
+index 1397915a2..961803347 100644
+--- a/include/openthread/message.h
++++ b/include/openthread/message.h
+@@ -348,6 +348,21 @@ uint16_t otMessageRead(const otMessage *aMessage, uint16_t aOffset, void *aBuf,
+  */
+ int otMessageWrite(otMessage *aMessage, uint16_t aOffset, const void *aBuf, uint16_t aLength);
+ 
++/**
++ * Creates a clone of a given message.
++ *
++ * The new message is allocated from the same message pool as @p aMessage. The entire message content from @p aMessage
++ * is copied to the new message.
++ *
++ * The caller takes ownership of the returned message and must free it by calling `otMessageFree()` when it is no
++ * longer needed.
++ *
++ * @param[in] aMessage   A pointer to the message to clone.
++ *
++ * @returns A pointer to the new message clone, or `nullptr` if no message buffers are available.
++ */
++otMessage *otMessageClone(const otMessage *aMessage);
++
+ /**
+  * Represents an OpenThread message queue.
+  */
+diff --git a/include/openthread/udp.h b/include/openthread/udp.h
+index d1679cbd5..ed2c5c9ad 100644
+--- a/include/openthread/udp.h
++++ b/include/openthread/udp.h
+@@ -57,10 +57,19 @@ extern "C" {
+  */
+ 
+ /**
+- * This callback allows OpenThread to provide specific handlers for certain UDP messages.
++ * Represents a callback to handle a received UDP message.
+  *
+- * @retval  true    The message is handled by this receiver and should not be further processed.
+- * @retval  false   The message is not handled by this receiver.
++ * This callback is used by a UDP receiver (see `otUdpAddReceiver()`) to process an incoming UDP message.
++ *
++ * This callback does not transfer ownership of @p aMessage. The callback implementation must not modify the message
++ * content. The message is guaranteed to be valid only within the context of the callback.
++ *
++ * @param[in] aContext      A pointer to the application-specific context.
++ * @param[in] aMessage      A pointer to the received UDP message.
++ * @param[in] aMessageInfo  A pointer to the IPv6 message info structure.
++ *
++ * @retval  TRUE    The message is handled by this receiver and should not be further processed.
++ * @retval  FALSE   The message is not handled by this receiver.
+  */
+ typedef bool (*otUdpHandler)(void *aContext, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
+ 
+@@ -110,7 +119,14 @@ otError otUdpRemoveReceiver(otInstance *aInstance, otUdpReceiver *aUdpReceiver);
+ otError otUdpSendDatagram(otInstance *aInstance, otMessage *aMessage, otMessageInfo *aMessageInfo);
+ 
+ /**
+- * This callback allows OpenThread to inform the application of a received UDP message.
++ * Callback function pointer to notify the application of a received UDP message on a UDP socket.
++ *
++ * This callback does not transfer ownership of @p aMessage. The callback implementation must not modify the message
++ * content. The message is guaranteed to be valid only within the context of the callback.
++ *
++ * @param[in] aContext      A pointer to the application-specific context.
++ * @param[in] aMessage      A pointer to the received UDP message.
++ * @param[in] aMessageInfo  A pointer to the IPv6 message info structure.
+  */
+ typedef void (*otUdpReceive)(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
+ 
+diff --git a/src/core/api/message_api.cpp b/src/core/api/message_api.cpp
+index 5404df935..dff8c4da6 100644
+--- a/src/core/api/message_api.cpp
++++ b/src/core/api/message_api.cpp
+@@ -115,6 +115,8 @@ int otMessageWrite(otMessage *aMessage, uint16_t aOffset, const void *aBuf, uint
+     return aLength;
+ }
+ 
++otMessage *otMessageClone(const otMessage *aMessage) { return AsCoreType(aMessage).Clone(); }
++
+ void otMessageQueueInit(otMessageQueue *aQueue)
+ {
+     AssertPointerIsNotNull(aQueue);
+-- 
+2.34.1
+

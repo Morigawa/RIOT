@@ -107,7 +107,7 @@ static void *_openthread_event_loop(void *arg)
     otPanId panid = OPENTHREAD_PANID;
     uint8_t channel = OPENTHREAD_CHANNEL;
     char *networkkey = OPENTHREAD_NETWORK_KEY;
-    char *meshprefix = "fd:05:77:bd:d2:c1:da:be";
+    char *meshprefix = "de:ad:00:be:ef:00:ca:fe";
     char *networkname = "OT-nrf1";
 
     /* Bring up the IPv6 interface  */

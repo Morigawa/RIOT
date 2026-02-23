@@ -34,6 +34,8 @@
  */
 
 #include "net/sock/udp.h"
+#include "mbox.h"
+#include "msg.h"
 #include "openthread/udp.h"
 
 /**

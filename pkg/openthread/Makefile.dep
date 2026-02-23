@@ -10,6 +10,10 @@ ifneq (,$(filter openthread-cli-%,$(USEMODULE)))
   USEMODULE += shell_cmds_default
 endif
 
+ifneq (,$(filter sock_udp,$(USEMODULE)))
+  USEMODULE += openthread_sock_udp
+endif
+
 ifneq (,$(filter openthread_sock_udp,$(USEMODULE)))
   USEMODULE += core_mbox
   USEMODULE += iolist

@@ -100,8 +100,8 @@ static void _send_udp_message_handler(event_t *event)
     iolist_to_buffer(send_event->snips, &msg_buffer, payload_bytes);
  
     otError error = otMessageAppend(message, &msg_buffer, payload_bytes);
-    printf("Length of message after append: %d Length of message before append %d\n", otMessageGetLength(message),payload_bytes);
-    printf("Error: %s\n", otThreadErrorToString(error));  
+    // printf("Length of message after append: %d Length of message before append %d\n", otMessageGetLength(message),payload_bytes);
+    // printf("Error: %s\n", otThreadErrorToString(error));  
     //maybe skip?
     if (error != OT_ERROR_NONE) {
         otMessageFree(message);
@@ -119,10 +119,10 @@ static void _read_message_handler(event_t *event)
     read_message_event_t* read_message_event = container_of(event, read_message_event_t, super);
     otMessage* msg = read_message_event->message_ptr;
 
-    // TODO what if greater then max_len 
     uint16_t packet_len = otMessageGetLength(msg);
     *read_message_event->packet_len = (packet_len > read_message_event->max_len) ? read_message_event->max_len : packet_len;
     otMessageRead(msg, otMessageGetOffset(msg), read_message_event->data, *read_message_event->packet_len);
+    otMessageFree(msg);
 }
 
 static void _handle_udp_receive(void *context, otMessage* message, const otMessageInfo* message_info)
@@ -134,18 +134,7 @@ static void _handle_udp_receive(void *context, otMessage* message, const otMessa
     ot_message_t* msg_buf = memarray_alloc(&ot_messages_memarray);
     if(msg_buf == NULL) return; // Log error no buf
 
-    otInstance* instance = openthread_get_instance();
-
-    uint16_t len = otMessageGetLength(message);
-    char* tmp_buf[len];
-    otMessageRead(message, 0, tmp_buf, len);
-
-    // Allocate message buffer in OpenThread managed buffer pool
-    otMessage* msg_cpy = otUdpNewMessage(instance, NULL);
-    if(msg_cpy == NULL) return; //Log error no buf
-    otMessageAppend(msg_cpy, tmp_buf, len);
-
-    msg_buf->msg = msg_cpy;
+    msg_buf->msg = otMessageClone(message);
     msg_buf->msg_info = *message_info;
 
     msg_t msg = {
@@ -245,8 +234,6 @@ int sock_udp_create(sock_udp_t *sock, const sock_udp_ep_t *local,
     memset(sock, 0, sizeof(*sock));
 
     mbox_init(&sock->mbox, sock->mbox_queue, OT_SOCK_MBOX_SIZE);
-    otMessageQueue msgq;
-    otMessageQueueInit(&msgq);
 
     socket_event_t event_create_udp_socket = {
         .super.handler = _create_udp_socket_handler,
@@ -354,17 +341,19 @@ ssize_t sock_udp_recv_aux(sock_udp_t *sock, void *data, size_t max_len,
         .max_len = max_len,
         .packet_len = &packet_len,
     };
-    
     event_queue_t* ot_evq = openthread_get_evq();
     event_post(ot_evq, &read_message_event.super);
     event_sync(ot_evq);
 
+    // REMOTE KANN NULL SEIN WAS HEI?T DAS?
+
     // uint8_t addr[16] = {0xff, 0x02, 0x0 ,0x0 ,0x0, 0x0, 0x0 ,0x0 ,0x0, 0x0,0x0 ,0x0 ,0x0, 0x0, 0x0, 0x02};
     // memcpy(&remote->addr.ipv6, addr, 16*sizeof(uint8_t));
     // remote->port = 4404;
-    memcpy(&remote->addr.ipv6, ot_message->msg_info.mPeerAddr.mFields.m8, 16*sizeof(uint8_t));
-    remote->port = ot_message->msg_info.mPeerPort;
-    otMessageFree();
+    if (remote != NULL) {
+        memcpy(&remote->addr.ipv6, ot_message->msg_info.mPeerAddr.mFields.m8, 16*sizeof(uint8_t));
+        remote->port = ot_message->msg_info.mPeerPort;
+    }
     memarray_free(&ot_messages_memarray,ot_message);
 
     return packet_len;
