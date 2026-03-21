@@ -159,6 +159,9 @@ void recv_pkt(otInstance *aInstance, netdev_t *dev)
 
     /* Get RSSI from a radio driver. RSSI should be in [dBm] */
     Rssi = (int8_t)rx_info.rssi;
+    sReceiveFrame.mInfo.mRxInfo.mRssi = Rssi;
+    sReceiveFrame.mInfo.mRxInfo.mLqi = rx_info.lqi;
+
     if (IS_ACTIVE(ENABLE_DEBUG)) {
         DEBUG("Received message: len %d\n", (int) sReceiveFrame.mLength);
         for (int i = 0; i < sReceiveFrame.mLength; ++i) {
