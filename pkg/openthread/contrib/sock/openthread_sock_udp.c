@@ -127,7 +127,6 @@ static void _read_message_handler(event_t *event)
 
 static void _handle_udp_receive(void *context, otMessage* message, const otMessageInfo* message_info)
 {
-    (void) message_info;
     sock_udp_t* sock = context;
 
     // Allocate buffer for message pointer and otMessageInfo in RIOT buffer Pool
