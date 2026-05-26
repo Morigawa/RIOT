@@ -10,10 +10,11 @@
  * @{
  * @ingroup     net
  * @file
- * @brief       Netdev adoption for OpenThread
+ * @brief       Radio HAL adoption for OpenThread
  *
  * @author      Jose Ignacio Alamos <jialamos@uc.cl>
  * @author      Baptiste Clenet <bapclenet@gmail.com>
+ * @author      Moritz Voigt <moritz.voigt@mailbox.tu-dresden.de>
  * @}
  */
 
@@ -37,7 +38,7 @@
 #include "debug.h"
 
 static otInstance *sInstance;   /**< global OpenThread instance */
-static netdev_t *_dev;          /**< netdev descriptor for OpenThread */
+static ieee802154_dev_t *_dev;  /**< radio hal descriptor for OpenThread */
 static event_queue_t ev_queue;  /**< the event queue for OpenThread */
 
 static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
@@ -63,14 +64,24 @@ static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 	return 0;
 }
 
-static void _ev_isr_handler(event_t *event)
+static void _ev_recv_handler(event_t *event)
 {
     (void) event;
-    _dev->driver->isr(_dev);
+    recv_pkt(sInstance);
 }
 
-static event_t ev_isr = {
-    .handler = _ev_isr_handler
+static event_t ev_recv = {
+    .handler = _ev_recv_handler
+};
+
+static void _ev_process_tx_done_handler(event_t *event)
+{
+    (void) event;
+    process_tx_done(sInstance);
+}
+
+static event_t _ev_process_tx_done = {
+    .handler = _ev_process_tx_done_handler
 };
 
 event_queue_t *openthread_get_evq(void)
@@ -83,40 +94,35 @@ otInstance* openthread_get_instance(void)
     return sInstance;
 }
 
-static void _event_cb(netdev_t *dev, netdev_event_t event) {
-    switch (event) {
-        case NETDEV_EVENT_ISR:
-            event_post(&ev_queue, &ev_isr);
-            break;
-        case NETDEV_EVENT_RX_COMPLETE:
-            DEBUG("openthread_netdev: Reception of a packet\n");
-            recv_pkt(sInstance, dev);
-            break;
-        case NETDEV_EVENT_TX_COMPLETE:
-#ifndef MODULE_NETDEV_NEW_API
-        case NETDEV_EVENT_TX_NOACK:
-        case NETDEV_EVENT_TX_MEDIUM_BUSY:
-#endif
-            DEBUG("openthread_netdev: Transmission of a packet\n");
-            send_pkt(sInstance, dev, event);
-            break;
-        default:
-            break;
+static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
+{
+    /* What about start indications esp. TxStarted */
+    switch (status) {
+    case IEEE802154_RADIO_CONFIRM_TX_DONE:
+        event_post(&ev_queue, &_ev_process_tx_done);
+        break;
+    case IEEE802154_RADIO_INDICATION_CRC_ERROR:
+        /* Just drop the packet */
+        while (ieee802154_radio_set_idle(dev, false) < 0) {}
+        ieee802154_radio_read(dev, NULL, 0, NULL);
+        /* TODO: status change necessary? Dependent on previous state */
+        break;
+    case IEEE802154_RADIO_INDICATION_RX_DONE:
+        while (ieee802154_radio_set_idle(dev, false) < 0) {}
+        event_post(&ev_queue, &ev_recv);
+        break;
+    default:
+        break;
     }
 }
 
 static void *_openthread_event_loop(void *arg)
 {
     _dev = arg;
-    netdev_t *netdev = arg;
 
     event_queue_init(&ev_queue);
 
-    netdev->event_callback = _event_cb;
-    netdev->driver->init(netdev);
-
-    netopt_enable_t enable = NETOPT_ENABLE;
-    netdev->driver->set(netdev, NETOPT_TX_END_IRQ, &enable, sizeof(enable));
+    _dev->cb = _hal_radio_cb;
 
     /* init OpenThread */
     sInstance = otInstanceInitSingle();
@@ -169,11 +175,11 @@ static void *_openthread_event_loop(void *arg)
 }
 
 /* starts OpenThread thread */
-int openthread_netdev_init(char *stack, int stacksize, char priority,
-                           const char *name, netdev_t *netdev) {
+int openthread_hal_init(char *stack, int stacksize, char priority,
+                           const char *name, ieee802154_dev_t *dev) {
     if (thread_create(stack, stacksize,
                          priority, 0,
-                         _openthread_event_loop, netdev, name) < 0) {
+                         _openthread_event_loop, dev, name) < 0) {
         return -EINVAL;
     }
 

@@ -56,13 +56,13 @@
 extern "C" {
 #endif
 
+#include "event.h"
 #include "net/netopt.h"
 #include "net/ieee802154.h"
+#include "net/ieee802154/radio.h"
 #include "net/ethernet.h"
-#include "net/netdev.h"
-#include "thread.h"
 #include "openthread/instance.h"
-#include "event.h"
+#include "thread.h"
 
 /**
  * @name    Openthread constants
@@ -103,18 +103,17 @@ typedef struct {
  * @brief Gets packet from driver and tells OpenThread about the reception.
  *
  * @param[in]  aInstance          pointer to an OpenThread instance
- * @param[in]  dev                pointer to a netdev instance
+ * @param[in]  dev                pointer to a radio HAL device
  */
-void recv_pkt(otInstance *aInstance, netdev_t *dev);
+void recv_pkt(otInstance *aInstance);
 
 /**
  * @brief   Inform OpenThread when tx is finished
  *
  * @param[in]  aInstance          pointer to an OpenThread instance
- * @param[in]  dev                pointer to a netdev interface
- * @param[in]  event              just occurred netdev event
+ * @param[in]  dev                pointer to a radio HAL device
  */
-void send_pkt(otInstance *aInstance, netdev_t *dev, netdev_event_t event);
+void process_tx_done(otInstance *aInstance);
 
 /**
  * @brief Get OpenThread event queue
@@ -138,11 +137,13 @@ void openthread_bootstrap(void);
 /**
  * @brief   Init OpenThread radio
  *
- * @param[in]  dev                pointer to a netdev interface
+ * @param[in]  dev                pointer to a radio HAL device
  * @param[in]  tb                 pointer to the TX buffer designed for OpenThread
  * @param[in]  rb                 pointer to the RX buffer designed for Open_Thread
+ * 
+ * @return Error code TODO
  */
-void openthread_radio_init(netdev_t *dev, uint8_t *tb, uint8_t *rb);
+int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb);
 
 /**
  * @brief   Starts OpenThread thread.
@@ -156,8 +157,7 @@ void openthread_radio_init(netdev_t *dev, uint8_t *tb, uint8_t *rb);
  * @return  PID of OpenThread thread
  * @return  -EINVAL if there was an error creating the thread
  */
-int openthread_netdev_init(char *stack, int stacksize, char priority, const char *name, netdev_t *netdev);
-
+int openthread_hal_init(char *stack, int stacksize, char priority, const char *name, ieee802154_dev_t *dev);
 /**
  * @brief   Init OpenThread random
  */
