@@ -108,7 +108,6 @@ static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
         /* TODO: status change necessary? Dependent on previous state */
         break;
     case IEEE802154_RADIO_INDICATION_RX_DONE:
-        while (ieee802154_radio_set_idle(dev, false) < 0) {}
         event_post(&ev_queue, &ev_recv);
         break;
     default:
