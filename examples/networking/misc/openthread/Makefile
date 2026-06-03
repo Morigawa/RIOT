@@ -75,8 +75,8 @@ USEMODULE += ps
 #CFLAGS += -DLOG_LEVEL=LOG_DEBUG
 
 # Stacksize should be increased in case 'ot debug' is used from the shell
-# else a core panic is triggered
-#CFLAGS += -DTHREAD_STACKSIZE_MAIN=4096
+# Else Shell will prompt > > > infinitly 
+CFLAGS += -DTHREAD_STACKSIZE_MAIN=2048
 
 #required for C++ compiling
 CXXEXFLAGS += -fno-rtti
