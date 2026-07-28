@@ -42,6 +42,7 @@ typedef struct openthread_device {
     eui64_t factory_eui;
     eui64_t _ext_addr;
     network_uint16_t _short_addr;
+    int8_t cca_threshold;
     int8_t rssi;
 } openthread_device_t;
 
@@ -90,6 +91,11 @@ static int _set_promiscuous(bool enable)
     return ieee802154_radio_set_frame_filter_mode(_ot_dev.dev, filter_mode);
 }
 
+static int _set_cca_threshold(int8_t cca_threshhold) {
+    _ot_dev.cca_threshold = cca_threshhold;
+    return ieee802154_radio_set_cca_threshold(_ot_dev.dev, cca_threshhold);
+}
+
 /* init framebuffers and initial state */
 int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb)
 {
@@ -134,7 +140,7 @@ int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb)
     _set_panid(CONFIG_IEEE802154_DEFAULT_PANID);
 
     /* set cca threashold to default */
-    ieee802154_radio_set_cca_threshold(_ot_dev.dev, CONFIG_IEEE802154_CCA_THRESH_DEFAULT);
+    _set_cca_threshold(CONFIG_IEEE802154_CCA_THRESH_DEFAULT);
 
     assert(res >= 0);
 
@@ -315,22 +321,18 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 
 otError otPlatRadioGetCcaEnergyDetectThreshold(otInstance *aInstance, int8_t *aThreshold)
 {
-    // TODO write me 
-    DEBUG("openthread: otPlatRadioGetCcaEnergyDetectThreshold is not implemented\n");
     (void) aInstance;
-    (void) aThreshold;
+    *aThreshold = _ot_dev.cca_threshold;
 
-    return OT_ERROR_NOT_IMPLEMENTED;
+    return OT_ERROR_NONE;
 }
 
 otError otPlatRadioSetCcaEnergyDetectThreshold(otInstance *aInstance, int8_t aThreshold)
 {
-    // TODO write me 
-    DEBUG("openthread: otPlatRadioSetCcaEnergyDetectThreshold is not implemented\n");
     (void) aInstance;
-    (void) aThreshold;
+    _set_cca_threshold(aThreshold);
 
-    return OT_ERROR_NOT_IMPLEMENTED;
+    return OT_ERROR_NONE;
 }
 
 otError otPlatRadioGetFemLnaGain(otInstance *aInstance, int8_t *aGain)
