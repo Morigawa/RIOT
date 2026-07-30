@@ -35,12 +35,12 @@ typedef struct {
 
 static void _ev_timer_handler(event_t *event)
 {
-    timer_event_t* timer_event = container_of(event, timer_event_t, super);
-    if(timer_event->isUsec)
-    {
+    timer_event_t *timer_event = container_of(event, timer_event_t, super);
+
+    if (timer_event->isUsec) {
         otPlatAlarmMicroFired(openthread_get_instance());
     }
-    else{
+    else {
         otPlatAlarmMilliFired(openthread_get_instance());
     }
 }
@@ -56,13 +56,13 @@ static timer_event_t ev_timer_micro = {
 
 void _timeout_cb_milli(void *arg)
 {
-    (void) arg;
+    (void)arg;
     event_post(openthread_get_evq(), &ev_timer_milli.super);
 }
 
 void _timeout_cb_micro(void *arg)
 {
-    (void) arg;
+    (void)arg;
     event_post(openthread_get_evq(), &ev_timer_micro.super);
 }
 
@@ -108,6 +108,7 @@ void otPlatAlarmMilliStop(otInstance *aInstance)
 uint32_t otPlatAlarmMilliGetNow(void)
 {
     uint32_t now = ztimer_now(ZTIMER_MSEC);
+
     DEBUG("openthread: otPlatAlarmGetNow: %" PRIu32 "\n", now);
     return now;
 }
@@ -137,6 +138,7 @@ void otPlatAlarmMicroStop(otInstance *aInstance)
 uint32_t otPlatAlarmMicroGetNow(void)
 {
     uint32_t now = ztimer_now(ZTIMER_USEC);
+
     DEBUG("openthread: otPlatAlarmGetNow: %" PRIu32 "\n", now);
     return now;
 }

@@ -30,15 +30,15 @@
 
 /* adapted from OpenThread posix example:
  * See: https://github.com/openthread/openthread/blob/master/examples/platforms/posix/logging.c */
-__attribute__((__format__ (__printf__, 3, 4)))
+__attribute__((__format__(__printf__, 3, 4)))
 void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
 {
-    (void) aLogLevel;
-    (void) aLogRegion;
+    (void)aLogLevel;
+    (void)aLogRegion;
     va_list args;
     va_start(args, aFormat);
     /*stderr is not redirected to make term*/
-    vprintf(aFormat,args);
+    vprintf(aFormat, args);
     printf("\n");
     va_end(args);
 }
@@ -46,7 +46,7 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat
 // optional
 void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatLogHandleLevelChanged is not implemented");
-    (void) aLogLevel;
+    (void)aLogLevel;
 }

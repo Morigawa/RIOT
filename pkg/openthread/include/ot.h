@@ -73,9 +73,11 @@ extern "C" {
 /** @brief   sizeof in bytes the two first members of she serial structure */
 #define OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF               (4U)
 /** @brief   sizeof the serial buffer */
-#define OPENTHREAD_SERIAL_BUFFER_SIZE                       OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF + 100
+#define OPENTHREAD_SERIAL_BUFFER_SIZE                       OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF + \
+        100
 /** @brief   sizeof the spinel payload data */
-#define OPENTHREAD_SERIAL_BUFFER__PAYLOAD_SIZE              OPENTHREAD_SERIAL_BUFFER_SIZE - OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF
+#define OPENTHREAD_SERIAL_BUFFER__PAYLOAD_SIZE              OPENTHREAD_SERIAL_BUFFER_SIZE - \
+        OPENTHREAD_SIZEOF_LENGTH_AND_FREEBUFF
 /** @brief   error when no more buffer available */
 #define OPENTHREAD_ERROR_NO_EMPTY_SERIAL_BUFFER             -1
 /** @brief   serial buffer ready to use */
@@ -127,7 +129,7 @@ event_queue_t *openthread_get_evq(void);
  *
  * @return pointer to the OpenThread instance
  */
-otInstance* openthread_get_instance(void);
+otInstance *openthread_get_instance(void);
 
 /**
  * @brief   Bootstrap OpenThread
@@ -140,7 +142,7 @@ void openthread_bootstrap(void);
  * @param[in]  dev                pointer to a radio HAL device
  * @param[in]  tb                 pointer to the TX buffer designed for OpenThread
  * @param[in]  rb                 pointer to the RX buffer designed for Open_Thread
- * 
+ *
  * @return Error code TODO
  */
 int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb);
@@ -157,7 +159,8 @@ int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb);
  * @return  PID of OpenThread thread
  * @return  -EINVAL if there was an error creating the thread
  */
-int openthread_hal_init(char *stack, int stacksize, char priority, const char *name, ieee802154_dev_t *dev);
+int openthread_hal_init(char *stack, int stacksize, char priority, const char *name,
+                        ieee802154_dev_t *dev);
 /**
  * @brief   Init OpenThread random
  */

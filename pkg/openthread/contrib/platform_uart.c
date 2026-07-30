@@ -38,9 +38,9 @@ static uint16_t frameLength = 0;
 
 static void _ev_serial_handler(event_t *event)
 {
-    (void) event;
+    (void)event;
     /* Tell OpenThread about the reception of a CLI command */
-    otPlatUartReceived((uint8_t*)gSerialMessage[0].buf, gSerialMessage[0].length);
+    otPlatUartReceived((uint8_t *)gSerialMessage[0].buf, gSerialMessage[0].length);
     gSerialMessage[0].serial_buffer_status = OPENTHREAD_SERIAL_BUFFER_STATUS_FREE;
 }
 
@@ -48,29 +48,30 @@ static event_t ev_serial = {
     .handler = _ev_serial_handler
 };
 
-static void uart_handler(void* arg, char c) {
+static void uart_handler(void *arg, char c)
+{
     (void)arg;
 
     if (frameLength == 0) {
         memset(&gSerialMessage[0], 0, sizeof(serial_msg_t));
     }
     switch (c) {
-        case '\r':
-        case '\n':
-            if (frameLength > 0) {
-                gSerialMessage[0].buf[frameLength] = c;
-                frameLength++;
-                gSerialMessage[0].length = frameLength;
-                event_post(openthread_get_evq(), &ev_serial);
-                frameLength = 0;
-            }
-            break;
-        default:
-            if (frameLength < OPENTHREAD_SERIAL_BUFFER_SIZE) {
-                gSerialMessage[0].buf[frameLength] = c;
-                frameLength++;
-            }
-            break;
+    case '\r':
+    case '\n':
+        if (frameLength > 0) {
+            gSerialMessage[0].buf[frameLength] = c;
+            frameLength++;
+            gSerialMessage[0].length = frameLength;
+            event_post(openthread_get_evq(), &ev_serial);
+            frameLength = 0;
+        }
+        break;
+    default:
+        if (frameLength < OPENTHREAD_SERIAL_BUFFER_SIZE) {
+            gSerialMessage[0].buf[frameLength] = c;
+            frameLength++;
+        }
+        break;
     }
 }
 
@@ -81,7 +82,7 @@ otError otPlatUartEnable(void)
         gSerialMessage[i].serial_buffer_status = OPENTHREAD_SERIAL_BUFFER_STATUS_FREE;
     }
 
-    uart_init(STDIO_UART_DEV, STDIO_UART_BAUDRATE, (uart_rx_cb_t) uart_handler, NULL);
+    uart_init(STDIO_UART_DEV, STDIO_UART_BAUDRATE, (uart_rx_cb_t)uart_handler, NULL);
     return OT_ERROR_NONE;
 }
 
@@ -105,7 +106,7 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 
 otError otPlatUartFlush(void)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatUartFlush is not implemented");
 
     return OT_ERROR_NONE;

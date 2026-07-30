@@ -26,7 +26,7 @@
 
 static void _ev_tasklets_handler(event_t *event)
 {
-    (void) event;
+    (void)event;
     otInstance *instance = openthread_get_instance();
     while (otTaskletsArePending(instance)) {
         otTaskletsProcess(instance);
@@ -38,8 +38,9 @@ static event_t ev_tasklet = {
 };
 
 /* OpenThread will call this when switching state from empty tasklet to non-empty tasklet. */
-void otTaskletsSignalPending(otInstance *aInstance) {
-    (void) aInstance;
+void otTaskletsSignalPending(otInstance *aInstance)
+{
+    (void)aInstance;
     event_post(openthread_get_evq(), &ev_tasklet);
 }
 
@@ -52,15 +53,15 @@ void otPlatReset(otInstance *aInstance)
 
 otError otPlatResetToBootloader(otInstance *aInstance)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatResetToBootloader is not implemented");
-    (void) aInstance;
+    (void)aInstance;
     return OT_ERROR_NOT_CAPABLE;
 }
 
 otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatGetResetReason is not implemented");
     (void)aInstance;
     return OT_PLAT_RESET_REASON_UNKNOWN;
@@ -68,39 +69,39 @@ otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 
 void otPlatAssertFail(const char *aFilename, int aLineNumber)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatAssertFail is not implemented");
-    (void) aFilename;
-    (void) aLineNumber;
+    (void)aFilename;
+    (void)aLineNumber;
 }
 
 void otPlatWakeHost(void)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatWakeHost is not implemented");
 }
 
 otError otPlatSetMcuPowerState(otInstance *aInstance, otPlatMcuPowerState aState)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatSetMcuPowerState is not implemented");
-    (void) aInstance;
-    (void) aState;
+    (void)aInstance;
+    (void)aState;
     return OT_ERROR_FAILED;
 }
 
 otPlatMcuPowerState otPlatGetMcuPowerState(otInstance *aInstance)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatGetMcuPowerState is not implemented");
-    (void) aInstance;
+    (void)aInstance;
     return OT_PLAT_MCU_POWER_STATE_OFF;
 }
 
 // optional
 otError otPlatLogCrashDump(void)
 {
-    // TODO write me 
+    // TODO write me
     DEBUG("openthread: otPlatLogCrashDump is not implemented");
     return OT_ERROR_NOT_IMPLEMENTED;
 }

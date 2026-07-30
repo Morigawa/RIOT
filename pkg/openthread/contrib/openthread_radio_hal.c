@@ -43,30 +43,30 @@ static event_queue_t ev_queue;  /**< the event queue for OpenThread */
 
 static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 {
-	size_t i;
-	size_t src_len = strlen(src);
-	char *endptr;
+    size_t i;
+    size_t src_len = strlen(src);
+    char *endptr;
 
-	for (i = 0U; i < src_len; i++) {
-		if (!isxdigit((unsigned char)src[i]) &&
-		    src[i] != ':') {
-			return -EINVAL;
-		}
-	}
+    for (i = 0U; i < src_len; i++) {
+        if (!isxdigit((unsigned char)src[i]) &&
+            src[i] != ':') {
+            return -EINVAL;
+        }
+    }
 
-	(void)memset(buf, 0, buf_len);
+    (void)memset(buf, 0, buf_len);
 
-	for (i = 0U; i < (size_t)buf_len; i++) {
-		buf[i] = (uint8_t)strtol(src, &endptr, 16);
-		src = ++endptr;
-	}
+    for (i = 0U; i < (size_t)buf_len; i++) {
+        buf[i] = (uint8_t)strtol(src, &endptr, 16);
+        src = ++endptr;
+    }
 
-	return 0;
+    return 0;
 }
 
 static void _ev_recv_handler(event_t *event)
 {
-    (void) event;
+    (void)event;
     recv_pkt(sInstance);
 }
 
@@ -76,7 +76,7 @@ static event_t ev_recv = {
 
 static void _ev_process_tx_done_handler(event_t *event)
 {
-    (void) event;
+    (void)event;
     process_tx_done(sInstance);
 }
 
@@ -89,7 +89,7 @@ event_queue_t *openthread_get_evq(void)
     return &ev_queue;
 }
 
-otInstance* openthread_get_instance(void)
+otInstance *openthread_get_instance(void)
 {
     return sInstance;
 }
@@ -115,7 +115,7 @@ static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
     }
 }
 
-static void _openthread_manual_config(otInstance *sInstance) 
+static void _openthread_manual_config(otInstance *sInstance)
 {
     /* Init default parameters */
     otPanId panid = OPENTHREAD_PANID;
@@ -124,7 +124,7 @@ static void _openthread_manual_config(otInstance *sInstance)
     char *networkkey = OPENTHREAD_NETWORK_KEY;
     char *meshprefix = "fd:05:77:bd:d2:c1:da:be";
     char *networkname = "OT-nrf1";
-    
+
     otThreadSetNetworkName(sInstance, networkname);
     otLinkSetChannel(sInstance, channel);
     otLinkSetPanId(sInstance, panid);
@@ -180,10 +180,11 @@ static void *_openthread_event_loop(void *arg)
 
 /* starts OpenThread thread */
 int openthread_hal_init(char *stack, int stacksize, char priority,
-                           const char *name, ieee802154_dev_t *dev) {
+                        const char *name, ieee802154_dev_t *dev)
+{
     if (thread_create(stack, stacksize,
-                         priority, 0,
-                         _openthread_event_loop, dev, name) < 0) {
+                      priority, 0,
+                      _openthread_event_loop, dev, name) < 0) {
         return -EINVAL;
     }
 

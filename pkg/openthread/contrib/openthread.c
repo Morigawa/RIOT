@@ -52,5 +52,6 @@ void openthread_bootstrap(void)
     if (openthread_radio_init(&dev, tx_buf, rx_buf) < 0) {
         printf("Failed to initialize Radio");
     }
-    openthread_hal_init(ot_thread_stack, sizeof(ot_thread_stack), THREAD_PRIORITY_MAIN - 5, "openthread", &dev);
+    openthread_hal_init(ot_thread_stack, sizeof(ot_thread_stack), THREAD_PRIORITY_MAIN - 5,
+                        "openthread", &dev);
 }

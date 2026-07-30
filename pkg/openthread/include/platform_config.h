@@ -70,11 +70,11 @@ extern "C" {
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE
- * 
+ *
  * If set to 1 Flash API is used else Settings API
  * Only one of them has to be implemented as non-volatile storage requirement
  * currently only Settings API is supported by RIOT
- * 
+ *
  * @see https://openthread.io/guides/porting/implement-platform-abstraction-layer-apis
  */
 #define OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE 0

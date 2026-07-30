@@ -41,18 +41,18 @@
 
 #define SETTINGS_BUFFER_SIZE 1024
 
-static uint8_t  sSettingsBuf[SETTINGS_BUFFER_SIZE];
+static uint8_t sSettingsBuf[SETTINGS_BUFFER_SIZE];
 static uint16_t sSettingsBufLength;
 
 OT_TOOL_PACKED_BEGIN
-struct settingsBlock
-{
+struct settingsBlock {
     uint16_t key;
     uint16_t length;
 } OT_TOOL_PACKED_END;
 
 // settings API
-void otPlatSettingsInit(otInstance *aInstance, const uint16_t *aSensitiveKeys, uint16_t aSensitiveKeysLength)
+void otPlatSettingsInit(otInstance *aInstance, const uint16_t *aSensitiveKeys,
+                        uint16_t aSensitiveKeysLength)
 {
     OT_UNUSED_VARIABLE(aInstance);
     OT_UNUSED_VARIABLE(aSensitiveKeys);
@@ -61,35 +61,34 @@ void otPlatSettingsInit(otInstance *aInstance, const uint16_t *aSensitiveKeys, u
     sSettingsBufLength = 0;
 }
 
-void otPlatSettingsDeinit(otInstance *aInstance) { OT_UNUSED_VARIABLE(aInstance); }
+void otPlatSettingsDeinit(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+}
 
-otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint8_t *aValue, uint16_t *aValueLength)
+otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint8_t *aValue,
+                          uint16_t *aValueLength)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    uint16_t                    i           = 0;
-    uint16_t                    valueLength = 0;
-    uint16_t                    readLength;
-    int                         currentIndex = 0;
+    uint16_t i = 0;
+    uint16_t valueLength = 0;
+    uint16_t readLength;
+    int currentIndex = 0;
     const struct settingsBlock *currentBlock;
-    otError                     error = OT_ERROR_NOT_FOUND;
+    otError error = OT_ERROR_NOT_FOUND;
 
-    while (i < sSettingsBufLength)
-    {
+    while (i < sSettingsBufLength) {
         currentBlock = (struct settingsBlock *)&sSettingsBuf[i];
 
-        if (aKey == currentBlock->key)
-        {
-            if (currentIndex == aIndex)
-            {
+        if (aKey == currentBlock->key) {
+            if (currentIndex == aIndex) {
                 readLength = currentBlock->length;
 
                 // Perform read only if an input buffer was passed in
-                if (aValue != NULL && aValueLength != NULL)
-                {
+                if (aValue != NULL && aValueLength != NULL) {
                     // Adjust read length if input buffer size is smaller
-                    if (readLength > *aValueLength)
-                    {
+                    if (readLength > *aValueLength) {
                         readLength = *aValueLength;
                     }
 
@@ -97,7 +96,7 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint
                 }
 
                 valueLength = currentBlock->length;
-                error       = OT_ERROR_NONE;
+                error = OT_ERROR_NONE;
                 break;
             }
 
@@ -107,41 +106,38 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint
         i += sizeof(struct settingsBlock) + currentBlock->length;
     }
 
-    if (aValueLength != NULL)
-    {
+    if (aValueLength != NULL) {
         *aValueLength = valueLength;
     }
 
     return error;
 }
 
-otError otPlatSettingsSet(otInstance *aInstance, uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength)
+otError otPlatSettingsSet(otInstance *aInstance, uint16_t aKey, const uint8_t *aValue,
+                          uint16_t aValueLength)
 {
-    uint16_t                    i = 0;
-    uint16_t                    currentBlockLength;
-    uint16_t                    nextBlockStart;
+    uint16_t i = 0;
+    uint16_t currentBlockLength;
+    uint16_t nextBlockStart;
     const struct settingsBlock *currentBlock;
 
     // Delete all entries of aKey
-    while (i < sSettingsBufLength)
-    {
-        currentBlock       = (struct settingsBlock *)&sSettingsBuf[i];
+    while (i < sSettingsBufLength) {
+        currentBlock = (struct settingsBlock *)&sSettingsBuf[i];
         currentBlockLength = sizeof(struct settingsBlock) + currentBlock->length;
 
-        if (aKey == currentBlock->key)
-        {
+        if (aKey == currentBlock->key) {
             nextBlockStart = i + currentBlockLength;
 
-            if (nextBlockStart < sSettingsBufLength)
-            {
-                memmove(&sSettingsBuf[i], &sSettingsBuf[nextBlockStart], sSettingsBufLength - nextBlockStart);
+            if (nextBlockStart < sSettingsBufLength) {
+                memmove(&sSettingsBuf[i], &sSettingsBuf[nextBlockStart],
+                        sSettingsBufLength - nextBlockStart);
             }
 
             assert(sSettingsBufLength >= currentBlockLength);
             sSettingsBufLength -= currentBlockLength;
         }
-        else
-        {
+        else {
             i += currentBlockLength;
         }
     }
@@ -149,27 +145,27 @@ otError otPlatSettingsSet(otInstance *aInstance, uint16_t aKey, const uint8_t *a
     return otPlatSettingsAdd(aInstance, aKey, aValue, aValueLength);
 }
 
-otError otPlatSettingsAdd(otInstance *aInstance, uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength)
+otError otPlatSettingsAdd(otInstance *aInstance, uint16_t aKey, const uint8_t *aValue,
+                          uint16_t aValueLength)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    otError               error;
+    otError error;
     struct settingsBlock *currentBlock;
-    const uint16_t        newBlockLength = sizeof(struct settingsBlock) + aValueLength;
+    const uint16_t newBlockLength = sizeof(struct settingsBlock) + aValueLength;
 
-    if (sSettingsBufLength + newBlockLength <= sizeof(sSettingsBuf))
-    {
-        currentBlock         = (struct settingsBlock *)&sSettingsBuf[sSettingsBufLength];
-        currentBlock->key    = aKey;
+    if (sSettingsBufLength + newBlockLength <= sizeof(sSettingsBuf)) {
+        currentBlock = (struct settingsBlock *)&sSettingsBuf[sSettingsBufLength];
+        currentBlock->key = aKey;
         currentBlock->length = aValueLength;
 
-        memcpy(&sSettingsBuf[sSettingsBufLength + sizeof(struct settingsBlock)], aValue, aValueLength);
+        memcpy(&sSettingsBuf[sSettingsBufLength + sizeof(struct settingsBlock)], aValue,
+               aValueLength);
         sSettingsBufLength += newBlockLength;
 
         error = OT_ERROR_NONE;
     }
-    else
-    {
+    else {
         error = OT_ERROR_NO_BUFS;
     }
 
@@ -180,27 +176,24 @@ otError otPlatSettingsDelete(otInstance *aInstance, uint16_t aKey, int aIndex)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    uint16_t                    i            = 0;
-    int                         currentIndex = 0;
-    uint16_t                    nextBlockStart;
-    uint16_t                    currentBlockLength;
+    uint16_t i = 0;
+    int currentIndex = 0;
+    uint16_t nextBlockStart;
+    uint16_t currentBlockLength;
     const struct settingsBlock *currentBlock;
-    otError                     error = OT_ERROR_NOT_FOUND;
+    otError error = OT_ERROR_NOT_FOUND;
 
-    while (i < sSettingsBufLength)
-    {
-        currentBlock       = (struct settingsBlock *)&sSettingsBuf[i];
+    while (i < sSettingsBufLength) {
+        currentBlock = (struct settingsBlock *)&sSettingsBuf[i];
         currentBlockLength = sizeof(struct settingsBlock) + currentBlock->length;
 
-        if (aKey == currentBlock->key)
-        {
-            if (currentIndex == aIndex)
-            {
+        if (aKey == currentBlock->key) {
+            if (currentIndex == aIndex) {
                 nextBlockStart = i + currentBlockLength;
 
-                if (nextBlockStart < sSettingsBufLength)
-                {
-                    memmove(&sSettingsBuf[i], &sSettingsBuf[nextBlockStart], sSettingsBufLength - nextBlockStart);
+                if (nextBlockStart < sSettingsBufLength) {
+                    memmove(&sSettingsBuf[i], &sSettingsBuf[nextBlockStart],
+                            sSettingsBufLength - nextBlockStart);
                 }
 
                 assert(sSettingsBufLength >= currentBlockLength);
@@ -209,8 +202,7 @@ otError otPlatSettingsDelete(otInstance *aInstance, uint16_t aKey, int aIndex)
                 error = OT_ERROR_NONE;
                 break;
             }
-            else
-            {
+            else {
                 currentIndex++;
             }
         }
@@ -221,4 +213,7 @@ otError otPlatSettingsDelete(otInstance *aInstance, uint16_t aKey, int aIndex)
     return error;
 }
 
-void otPlatSettingsWipe(otInstance *aInstance) { otPlatSettingsInit(aInstance, NULL, 0); }
+void otPlatSettingsWipe(otInstance *aInstance)
+{
+    otPlatSettingsInit(aInstance, NULL, 0);
+}
