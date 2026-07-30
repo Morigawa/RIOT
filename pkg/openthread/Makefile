@@ -75,6 +75,7 @@ $(PKG_BUILD_DIR)/Makefile:
 	 -DCMAKE_STRIP="$(STRIP)" \
 	 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 	 -DOT_PLATFORM=external \
+   -DOT_OPERATIONAL_DATASET_AUTO_INIT=1 \
 	 -DOT_PLATFORM_CONFIG="$(RIOTBASE)/pkg/openthread/include/platform_config.h" \
 	 -DOT_APP_CLI=$(OT_APP_CLI) \
 	 -DOT_JOINER=$(OT_JOINER) \
@@ -82,5 +83,5 @@ $(PKG_BUILD_DIR)/Makefile:
 	 -DOT_RCP=OFF \
 	 -DOT_APP_RCP=OFF \
 	 -DOT_APP_NCP=OFF \
-	 -DOT_FTD=ON \
-	 -DOT_MTD=OFF \
+	 -DOT_FTD=$(if $(filter ftd,$(TD)),ON,OFF) \
+	 -DOT_MTD=$(if $(filter mtd,$(TD)),ON,OFF) \

@@ -115,50 +115,55 @@ static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
     }
 }
 
+static void _openthread_manual_config(otInstance *sInstance) 
+{
+    /* Init default parameters */
+    otPanId panid = OPENTHREAD_PANID;
+    // char *extpanid = "de:ad:00:be:ef:00:ca:fe";
+    uint8_t channel = OPENTHREAD_CHANNEL;
+    char *networkkey = OPENTHREAD_NETWORK_KEY;
+    char *meshprefix = "fd:05:77:bd:d2:c1:da:be";
+    char *networkname = "OT-nrf1";
+    
+    otThreadSetNetworkName(sInstance, networkname);
+    otLinkSetChannel(sInstance, channel);
+    otLinkSetPanId(sInstance, panid);
+
+    otNetworkKey otNetKey;
+    otMeshLocalPrefix otMeshLocalPrefix;
+    bytes_from_str(otNetKey.m8, OT_NETWORK_KEY_SIZE, networkkey);
+    bytes_from_str(otMeshLocalPrefix.m8, OT_MESH_LOCAL_PREFIX_SIZE, meshprefix);
+    // bytes_from_str(dataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE, extpanid);
+
+    otThreadSetNetworkKey(sInstance, &otNetKey);
+    otThreadSetMeshLocalPrefix(sInstance, &otMeshLocalPrefix);
+}
+
 static void *_openthread_event_loop(void *arg)
 {
+    otError error;
+
     _dev = arg;
+    _dev->cb = _hal_radio_cb;
 
     event_queue_init(&ev_queue);
 
-    _dev->cb = _hal_radio_cb;
-
-    /* init OpenThread */
+    /* Init OpenThread Instance */
     sInstance = otInstanceInitSingle();
 
 #if defined(MODULE_OPENTHREAD_CLI_FTD) || defined(MODULE_OPENTHREAD_CLI_MTD)
     ot_shell_init(sInstance);
 #endif
-    otError error;
-    otOperationalDataset dataset;
-
-    /* Init default parameters */
-    otPanId panid = OPENTHREAD_PANID;
-    uint8_t channel = OPENTHREAD_CHANNEL;
-    char *networkkey = OPENTHREAD_NETWORK_KEY;
-    char *meshprefix = "fd:05:77:bd:d2:c1:da:be";
-    char *networkname = "OT-nrf1";
 
     /* Bring up the IPv6 interface  */
     error = otIp6SetEnabled(sInstance, true);
 
-    /* Generate new operational dataset, should be done for only one board?, ftd only?*/
-    error = otDatasetCreateNewNetwork(sInstance, &dataset);
-
-    /* Set custom values for operational dataset*/
-    dataset.mChannel = channel;
-    dataset.mPanId = panid;
-    otNetworkNameFromString(&dataset.mNetworkName,networkname);
-
-    bytes_from_str(dataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE, networkkey);
-    bytes_from_str(dataset.mMeshLocalPrefix.m8, OT_MESH_LOCAL_PREFIX_SIZE, meshprefix);
-
-    /* Set active operational dataset*/
-    error = otDatasetSetActive(sInstance, &dataset);
+    /* Manually configure OpenThread requires -DOT_OPERATIONAL_DATASET_AUTO_INIT=1 */
+    _openthread_manual_config(sInstance);
 
     /* Start Thread protocol operation */
     error = otThreadSetEnabled(sInstance, true);
-    if (error!=OT_ERROR_NONE) {
+    if (error != OT_ERROR_NONE) {
         printf("pkg/openthread: Error in initialization\n");
     }
 
