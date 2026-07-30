@@ -49,6 +49,32 @@ typedef struct openthread_device {
 static openthread_device_t _ot_dev;
 static otRadioFrame sTransmitFrame;
 static otRadioFrame sReceiveFrame;
+static bool last_tx_ack = false;
+
+static bool _send_ack(uint8_t seq_num) 
+{
+    uint8_t ack[] = { IEEE802154_FCF_TYPE_ACK, 0x00,  seq_num };
+    iolist_t iolist = {
+        .iol_base = ack,
+        .iol_len = sizeof(ack),
+        .iol_next = NULL
+    };
+
+    while (ieee802154_radio_set_idle(_ot_dev.dev, false) != 0) {}
+    /* send packet though radio hal */
+    int res = ieee802154_radio_write(_ot_dev.dev, &iolist);
+    if(res != 0) {
+        printf("COULD NOT WRITE FRAMEBUFFER CORRECTLY: %d\n", res);
+        return false;
+    }
+    int state = irq_disable();
+    while (ieee802154_radio_request_transmit(_ot_dev.dev) == -EBUSY) {}
+    irq_restore(state);
+    while (ieee802154_radio_set_idle(_ot_dev.dev, false) != 0) {}
+    last_tx_ack = true;
+    
+    return true;
+}
 
 /* set 15.4 channel */
 static int _set_channel(uint16_t channel)
@@ -169,6 +195,7 @@ void recv_pkt(otInstance *aInstance)
         otPlatRadioReceiveDone(aInstance, NULL, OT_ERROR_ABORT);
         return;
     }
+
     /* Fill OpenThread receive frame */
     /* Openthread needs a packet length with FCS included,
      * (WRONG?) OpenThread does not use the data so we don't need to calculate FCS */
@@ -176,6 +203,25 @@ void recv_pkt(otInstance *aInstance)
 
     /* Read received frame */
     int res = ieee802154_radio_read(_ot_dev.dev, (char *) sReceiveFrame.mPsdu, len, &rx_info);
+
+    /* software ack logic */
+    if ((uint16_t)len > IEEE802154_ACK_FRAME_LEN) {
+        /* check for hardware ack */
+        if (!ieee802154_radio_has_capability(_ot_dev.dev, IEEE802154_CAP_AUTO_ACK)) {
+            /* check for correct type and ack request */
+            ieee802154_filter_mode_t mode;
+            if ((sReceiveFrame.mPsdu[0] & IEEE802154_FCF_TYPE_MASK) == IEEE802154_FCF_TYPE_DATA &&
+                (sReceiveFrame.mPsdu[0] & IEEE802154_FCF_ACK_REQ) &&
+                (ieee802154_radio_get_frame_filter_mode(_ot_dev.dev, &mode) < 0 ||
+                mode == IEEE802154_FILTER_ACCEPT)) {
+                    /* send ack */
+                if (!_send_ack(ieee802154_get_seq(sReceiveFrame.mPsdu))) {
+                    DEBUG("IEEE802154 submac: Sending ACK failed\n");
+                }
+            }
+        }
+    }
+    /* TODO: how to handle ACK's */
 
     /* The Radio HAL uses the IEEE 802.15.4 definition for RSSI.
      * OpenThread expects dBm. Therefore we need a translation here */
@@ -207,6 +253,10 @@ void process_tx_done(otInstance *aInstance)
     ieee802154_tx_info_t tx_info;
     int res = ieee802154_radio_confirm_transmit(_ot_dev.dev, &tx_info);
     if (res == -EAGAIN) {
+        return;
+    }
+    if (last_tx_ack == true) {
+        last_tx_ack = false;
         return;
     }
     switch(tx_info.status) {
@@ -576,7 +626,6 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
     _set_channel(aPacket->mChannel);
 
     /* send packet though radio hal */
-    /* TODO */
     int res = ieee802154_radio_write(_ot_dev.dev, &iolist);
     if(res != 0) {
         printf("COULD NOT WRITE FRAMEBUFFER CORRECTLY: %d\n", res);
