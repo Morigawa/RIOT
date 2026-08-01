@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>
+#include "atomic_utils.h"
 #include "msg.h"
 #include "openthread/dataset_ftd.h" // TODO only if ftd
 #include "openthread/instance.h"
@@ -40,6 +41,7 @@
 static otInstance *sInstance;   /**< global OpenThread instance */
 static ieee802154_dev_t *_dev;  /**< radio hal descriptor for OpenThread */
 static event_queue_t ev_queue;  /**< the event queue for OpenThread */
+static uint8_t *_skip_tx_done;
 
 static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 {
@@ -99,6 +101,11 @@ static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
     /* What about start indications esp. TxStarted */
     switch (status) {
     case IEEE802154_RADIO_CONFIRM_TX_DONE:
+        if (*_skip_tx_done == 1) {
+            ieee802154_radio_confirm_transmit(dev, NULL);
+            *_skip_tx_done = 0;
+            break;
+        }
         event_post(&ev_queue, &_ev_process_tx_done);
         break;
     case IEEE802154_RADIO_INDICATION_CRC_ERROR:
@@ -180,8 +187,9 @@ static void *_openthread_event_loop(void *arg)
 
 /* starts OpenThread thread */
 int openthread_hal_init(char *stack, int stacksize, char priority,
-                        const char *name, ieee802154_dev_t *dev)
+                        const char *name, ieee802154_dev_t *dev, uint8_t *skip_tx_done)
 {
+    _skip_tx_done = skip_tx_done;
     if (thread_create(stack, stacksize,
                       priority, 0,
                       _openthread_event_loop, dev, name) < 0) {

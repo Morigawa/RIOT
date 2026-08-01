@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "atomic_utils.h"
 #include "byteorder.h"
 #include "errno.h"
 #include "luid.h"
@@ -49,7 +50,8 @@ typedef struct openthread_device {
 static openthread_device_t _ot_dev;
 static otRadioFrame sTransmitFrame;
 static otRadioFrame sReceiveFrame;
-static bool last_tx_ack = false;
+
+static uint8_t *_skip_tx_done;
 
 static bool _send_ack(uint8_t seq_num)
 {
@@ -67,12 +69,17 @@ static bool _send_ack(uint8_t seq_num)
         printf("COULD NOT WRITE FRAMEBUFFER CORRECTLY: %d\n", res);
         return false;
     }
-    int state = irq_disable();
+    
+    //why?
+    ztimer_sleep(ZTIMER_USEC, 192);
+    
     while (ieee802154_radio_request_transmit(_ot_dev.dev) == -EBUSY) {}
-    irq_restore(state);
-    while (ieee802154_radio_set_idle(_ot_dev.dev, false) != 0) {}
-    last_tx_ack = true;
 
+    atomic_store_u8(_skip_tx_done, 1);
+    while (atomic_load_u8(_skip_tx_done) == 1) {}
+
+    while (ieee802154_radio_set_idle(_ot_dev.dev, false) != 0) {}
+    
     return true;
 }
 
@@ -127,7 +134,7 @@ static int _set_cca_threshold(int8_t cca_threshhold)
 }
 
 /* init framebuffers and initial state */
-int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb)
+int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb, uint8_t *skip_tx_done)
 {
     int res = 0;
 
@@ -137,6 +144,8 @@ int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb)
     sTransmitFrame.mLength = 0;
     sReceiveFrame.mPsdu = rb;
     sReceiveFrame.mLength = 0;
+
+    _skip_tx_done = skip_tx_done;
 
     if ((res = ieee802154_radio_request_on(_ot_dev.dev)) < 0) {
         return res;
@@ -259,10 +268,6 @@ void process_tx_done(otInstance *aInstance)
     int res = ieee802154_radio_confirm_transmit(_ot_dev.dev, &tx_info);
 
     if (res == -EAGAIN) {
-        return;
-    }
-    if (last_tx_ack == true) {
-        last_tx_ack = false;
         return;
     }
     switch (tx_info.status) {

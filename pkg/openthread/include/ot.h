@@ -145,7 +145,7 @@ void openthread_bootstrap(void);
  *
  * @return Error code TODO
  */
-int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb);
+int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb, uint8_t *skip_tx_done);
 
 /**
  * @brief   Starts OpenThread thread.
@@ -160,7 +160,7 @@ int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb);
  * @return  -EINVAL if there was an error creating the thread
  */
 int openthread_hal_init(char *stack, int stacksize, char priority, const char *name,
-                        ieee802154_dev_t *dev);
+                        ieee802154_dev_t *dev, uint8_t *skip_tx_done);
 /**
  * @brief   Init OpenThread random
  */

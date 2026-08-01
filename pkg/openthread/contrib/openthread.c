@@ -33,6 +33,7 @@
 #include "debug.h"
 
 static ieee802154_dev_t dev;
+static uint8_t skip_tx_done = 0;
 
 static uint8_t rx_buf[OPENTHREAD_NETDEV_BUFLEN];
 static uint8_t tx_buf[OPENTHREAD_NETDEV_BUFLEN];
@@ -49,9 +50,9 @@ void openthread_bootstrap(void)
     nrf802154_init();
 #endif
 
-    if (openthread_radio_init(&dev, tx_buf, rx_buf) < 0) {
+    if (openthread_radio_init(&dev, tx_buf, rx_buf, &skip_tx_done) < 0) {
         printf("Failed to initialize Radio");
     }
     openthread_hal_init(ot_thread_stack, sizeof(ot_thread_stack), THREAD_PRIORITY_MAIN - 5,
-                        "openthread", &dev);
+                        "openthread", &dev, &skip_tx_done);
 }
