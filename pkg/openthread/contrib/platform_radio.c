@@ -76,14 +76,14 @@ static bool _send_ack(uint8_t seq_num)
     return true;
 }
 
-/* set 15.4 channel */
+/* set 15.4 channel (precondition idle) */
 static int _set_channel(uint16_t channel)
 {
     _ot_dev.phy_conf.channel = channel;
     return ieee802154_radio_config_phy(_ot_dev.dev, &_ot_dev.phy_conf);
 }
 
-/* set transmission power */
+/* set transmission power (precondition idle)*/
 static int _set_power(int16_t power)
 {
     _ot_dev.phy_conf.pow = power;
@@ -386,6 +386,7 @@ otError otPlatRadioGetTransmitPower(otInstance *aInstance, int8_t *aPower)
 otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 {
     (void)aInstance;
+    while (ieee802154_radio_set_idle(_ot_dev.dev, false) != 0) {}
     _set_power(aPower);
 
     return OT_ERROR_NONE;
@@ -579,9 +580,10 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 {
     DEBUG("openthread: otPlatRadioReceive. Channel: %i\n", aChannel);
     (void)aInstance;
+    while (ieee802154_radio_set_idle(_ot_dev.dev, false) != 0) {}
+    _set_channel(aChannel);
 
     ieee802154_radio_set_rx(_ot_dev.dev);
-    _set_channel(aChannel);
     sReceiveFrame.mChannel = aChannel;
     return OT_ERROR_NONE;
 }
