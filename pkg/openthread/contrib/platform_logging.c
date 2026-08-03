@@ -43,10 +43,17 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat
     va_end(args);
 }
 
-// optional
+static const char *_log_level_as_str[] = {
+    "NONE",
+    "CRIT",
+    "WARN",
+    "NOTE",
+    "INFO",
+    "DEBG"
+};
+
 void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
 {
-    // TODO write me
-    DEBUG("openthread: otPlatLogHandleLevelChanged is not implemented");
+    DEBUG("openthread: log level changed to %s", _log_level_as_str[aLogLevel]);
     (void)aLogLevel;
 }

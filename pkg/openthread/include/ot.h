@@ -42,7 +42,7 @@
  * }
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
- * @see https://openthread.io/releases/thread-reference-20180619
+ * @see https://openthread.io/reference
  *
  * @{
  *
@@ -105,7 +105,6 @@ typedef struct {
  * @brief Gets packet from driver and tells OpenThread about the reception.
  *
  * @param[in]  aInstance          pointer to an OpenThread instance
- * @param[in]  dev                pointer to a radio HAL device
  */
 void recv_pkt(otInstance *aInstance);
 
@@ -113,7 +112,6 @@ void recv_pkt(otInstance *aInstance);
  * @brief   Inform OpenThread when tx is finished
  *
  * @param[in]  aInstance          pointer to an OpenThread instance
- * @param[in]  dev                pointer to a radio HAL device
  */
 void process_tx_done(otInstance *aInstance);
 
@@ -142,10 +140,12 @@ void openthread_bootstrap(void);
  * @param[in]  dev                pointer to a radio HAL device
  * @param[in]  tb                 pointer to the TX buffer designed for OpenThread
  * @param[in]  rb                 pointer to the RX buffer designed for Open_Thread
+ * @param[in]  tx_is_ack          pointer to variable indicating that tx done is skipped
  *
- * @return Error code TODO
+ * @retval 0 on success
+ * @retval negative errno on error
  */
-int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb, uint8_t *skip_tx_done);
+int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb, uint8_t *tx_is_ack);
 
 /**
  * @brief   Starts OpenThread thread.
@@ -154,13 +154,14 @@ int openthread_radio_init(ieee802154_dev_t *dev, uint8_t *tb, uint8_t *rb, uint8
  * @param[in]  stacksize          size of the stack
  * @param[in]  priority           priority of the OpenThread stack
  * @param[in]  name               name of the OpenThread stack
- * @param[in]  netdev             pointer to the netdev interface
+ * @param[in]  dev                pointer to a radio HAL device
+ * @param[in]  tx_is_ack          pointer to variable indicating that tx done is skipped
  *
- * @return  PID of OpenThread thread
- * @return  -EINVAL if there was an error creating the thread
+ * @retval  PID of OpenThread thread
+ * @retval  -EINVAL if there was an error creating the thread
  */
 int openthread_hal_init(char *stack, int stacksize, char priority, const char *name,
-                        ieee802154_dev_t *dev, uint8_t *skip_tx_done);
+                        ieee802154_dev_t *dev, uint8_t *tx_is_ack);
 /**
  * @brief   Init OpenThread random
  */

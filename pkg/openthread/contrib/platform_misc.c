@@ -53,7 +53,6 @@ void otPlatReset(otInstance *aInstance)
 
 otError otPlatResetToBootloader(otInstance *aInstance)
 {
-    // TODO write me
     DEBUG("openthread: otPlatResetToBootloader is not implemented");
     (void)aInstance;
     return OT_ERROR_NOT_CAPABLE;
@@ -61,7 +60,6 @@ otError otPlatResetToBootloader(otInstance *aInstance)
 
 otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 {
-    // TODO write me
     DEBUG("openthread: otPlatGetResetReason is not implemented");
     (void)aInstance;
     return OT_PLAT_RESET_REASON_UNKNOWN;
@@ -69,7 +67,6 @@ otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 
 void otPlatAssertFail(const char *aFilename, int aLineNumber)
 {
-    // TODO write me
     DEBUG("openthread: otPlatAssertFail is not implemented");
     (void)aFilename;
     (void)aLineNumber;
@@ -77,13 +74,11 @@ void otPlatAssertFail(const char *aFilename, int aLineNumber)
 
 void otPlatWakeHost(void)
 {
-    // TODO write me
     DEBUG("openthread: otPlatWakeHost is not implemented");
 }
 
 otError otPlatSetMcuPowerState(otInstance *aInstance, otPlatMcuPowerState aState)
 {
-    // TODO write me
     DEBUG("openthread: otPlatSetMcuPowerState is not implemented");
     (void)aInstance;
     (void)aState;
@@ -92,16 +87,13 @@ otError otPlatSetMcuPowerState(otInstance *aInstance, otPlatMcuPowerState aState
 
 otPlatMcuPowerState otPlatGetMcuPowerState(otInstance *aInstance)
 {
-    // TODO write me
     DEBUG("openthread: otPlatGetMcuPowerState is not implemented");
     (void)aInstance;
     return OT_PLAT_MCU_POWER_STATE_OFF;
 }
 
-// optional
 otError otPlatLogCrashDump(void)
 {
-    // TODO write me
     DEBUG("openthread: otPlatLogCrashDump is not implemented");
     return OT_ERROR_NOT_IMPLEMENTED;
 }

@@ -25,12 +25,10 @@
 #include <string.h>
 #include "atomic_utils.h"
 #include "msg.h"
-#include "openthread/dataset_ftd.h" // TODO only if ftd
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
 #include "openthread/platform/alarm-milli.h"
 #include "openthread/thread.h"
-#include "openthread/dataset_ftd.h" // TODO only if ftd
 #include "random.h"
 #include "ot.h"
 #include "event.h"
@@ -41,7 +39,7 @@
 static otInstance *sInstance;   /**< global OpenThread instance */
 static ieee802154_dev_t *_dev;  /**< radio hal descriptor for OpenThread */
 static event_queue_t ev_queue;  /**< the event queue for OpenThread */
-static uint8_t *_skip_tx_done;
+static uint8_t *_tx_is_ack;
 
 static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 {
@@ -98,12 +96,11 @@ otInstance *openthread_get_instance(void)
 
 static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
 {
-    /* What about start indications esp. TxStarted */
     switch (status) {
     case IEEE802154_RADIO_CONFIRM_TX_DONE:
-        if (*_skip_tx_done == 1) {
+        if (*_tx_is_ack == 1) {
             ieee802154_radio_confirm_transmit(dev, NULL);
-            *_skip_tx_done = 0;
+            *_tx_is_ack = 0;
             break;
         }
         event_post(&ev_queue, &_ev_process_tx_done);
@@ -112,7 +109,6 @@ static void _hal_radio_cb(ieee802154_dev_t *dev, ieee802154_trx_ev_t status)
         /* Just drop the packet */
         while (ieee802154_radio_set_idle(dev, false) < 0) {}
         ieee802154_radio_read(dev, NULL, 0, NULL);
-        /* TODO: status change necessary? Dependent on previous state */
         break;
     case IEEE802154_RADIO_INDICATION_RX_DONE:
         event_post(&ev_queue, &ev_recv);
@@ -126,24 +122,35 @@ static void _openthread_manual_config(otInstance *sInstance)
 {
     /* Init default parameters */
     otPanId panid = OPENTHREAD_PANID;
-    // char *extpanid = "de:ad:00:be:ef:00:ca:fe";
     uint8_t channel = OPENTHREAD_CHANNEL;
     char *networkkey = OPENTHREAD_NETWORK_KEY;
-    char *meshprefix = "fd:05:77:bd:d2:c1:da:be";
-    char *networkname = "OT-nrf1";
+    otNetworkKey otNetKey;
 
-    otThreadSetNetworkName(sInstance, networkname);
     otLinkSetChannel(sInstance, channel);
     otLinkSetPanId(sInstance, panid);
 
-    otNetworkKey otNetKey;
-    otMeshLocalPrefix otMeshLocalPrefix;
     bytes_from_str(otNetKey.m8, OT_NETWORK_KEY_SIZE, networkkey);
-    bytes_from_str(otMeshLocalPrefix.m8, OT_MESH_LOCAL_PREFIX_SIZE, meshprefix);
-    // bytes_from_str(dataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE, extpanid);
-
     otThreadSetNetworkKey(sInstance, &otNetKey);
+
+    /* Init optional parameters */
+#ifdef OPENTHREAD_NETWORK_NAME
+    char *networkname = OPENTHREAD_NETWORK_NAME;
+    otThreadSetNetworkName(sInstance, networkname);
+#endif
+
+#ifdef OPENTHREAD_MESH_PREFIX
+    otMeshLocalPrefix otMeshLocalPrefix;
+    char *meshprefix = OPENTHREAD_MESH_PREFIX;
+    bytes_from_str(otMeshLocalPrefix.m8, OT_MESH_LOCAL_PREFIX_SIZE, meshprefix);
     otThreadSetMeshLocalPrefix(sInstance, &otMeshLocalPrefix);
+#endif
+
+#ifdef OPENTHREAD_EXT_PANID
+    otExtendedPanId otExtPanId;
+    char *extpanid = OPENTHREAD_EXT_PANID;
+    bytes_from_str(otExtPanId.m8, OT_EXT_PAN_ID_SIZE, extpanid);
+    otThreadSetExtendedPanId(sInstance, &otExtPanId);
+#endif
 }
 
 static void *_openthread_event_loop(void *arg)
@@ -187,9 +194,9 @@ static void *_openthread_event_loop(void *arg)
 
 /* starts OpenThread thread */
 int openthread_hal_init(char *stack, int stacksize, char priority,
-                        const char *name, ieee802154_dev_t *dev, uint8_t *skip_tx_done)
+                        const char *name, ieee802154_dev_t *dev, uint8_t *tx_is_ack)
 {
-    _skip_tx_done = skip_tx_done;
+    _tx_is_ack = tx_is_ack;
     if (thread_create(stack, stacksize,
                       priority, 0,
                       _openthread_event_loop, dev, name) < 0) {

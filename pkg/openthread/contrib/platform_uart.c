@@ -106,8 +106,7 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 
 otError otPlatUartFlush(void)
 {
-    // TODO write me
     DEBUG("openthread: otPlatUartFlush is not implemented");
 
-    return OT_ERROR_NONE;
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
