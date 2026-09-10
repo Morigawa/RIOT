@@ -3,20 +3,24 @@ APPLICATION = openthread
 # If no BOARD is found in the environment, use this default:
 BOARD ?= nrf52840dk
 
-# These are the boards that OpenThread stack has been tested on
-# Currently disabled boards are missing the Radio HAL port: samr21-xpro, iotlab-m3, iotlab-a8-m3,
-# frdm-kw41z, openlabs-kw41z-mini-256kib, openlabs-kw41z-mini, phynode-kw41z, usb-kw41z
+# Currently disabled boards are missing the Radio HAL port:
+# iotlab-a8-m3, iotlab-m3, samr21-xpro
+
 BOARDS_SUPPORTED := \
+                    adafruit-feather-nrf52840-sense \
                     cc2538dk \
+                    frdm-kw41z \
+                    nrf52840-mdk \
+                    nrf52840dk \
+                    omote \
+                    openlabs-kw41z-mini \
+                    openlabs-kw41z-mini-256kib \
+                    openmote-cc2538 \
+                    phynode-kw41z \
+                    reel \
                     remote-reva \
                     remote-revb \
-                    omote \
-                    openmote-cc2538 \
-                    nrf52840dk \
-                    nrf52840-mdk \
-                    adafruit-feather-nrf52840-sense \
-                    reel \
-                    #
+                    usb-kw41z
 
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../../../..
